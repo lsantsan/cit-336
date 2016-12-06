@@ -17,7 +17,7 @@
                     <li><?php echo $ingredientItem ?></li>
                 <?php endforeach; ?>                
             </ul>
-            <p><b>Portion: </b> 2</p>
+            <p><b>Portion: </b><?php echo $recipe['portion']; ?></p>
         </div>
 
         <div id="recipe_directions_container" class="recipe_directions_container">
