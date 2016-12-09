@@ -173,17 +173,17 @@ switch ($action) {
         $isCancel = filter_input(INPUT_POST, 'cancel', FILTER_SANITIZE_STRING);
         $categoryId = filter_input(INPUT_POST, 'category_id', FILTER_VALIDATE_INT);
         $recipeName = filter_input(INPUT_POST, 'recipe_name', FILTER_SANITIZE_STRING);
-        $ingredients = filter_input(INPUT_POST, 'ingredients', FILTER_SANITIZE_STRING);
+        $ingredientsDirty = filter_input(INPUT_POST, 'ingredients', FILTER_SANITIZE_STRING);
         $portions = filter_input(INPUT_POST, 'portions', FILTER_VALIDATE_INT);
         $directions = filter_input(INPUT_POST, 'directions', FILTER_SANITIZE_STRING);
         $tmpFile = $_FILES['recipe_image'];
-
+                
          if ($isCancel != NULL) {
             header("Location: ?action=show_home&user_id=$activeUser[0]");
             break;
         }
         
-        $error_message = validateRecipeInputs($categoryId, $recipeName, $ingredients, $portions, $directions, $tmpFile);
+        $error_message = validateRecipeInputs($categoryId, $recipeName, $ingredientsDirty, $portions, $directions, $tmpFile);
         if (isset($error_message)) {
             include('view/new_recipe.php');
             break;
@@ -199,6 +199,8 @@ switch ($action) {
         } else { //WITHOUT IMAGE
             $newImagePath = IMG_URL . DIRECTORY_SEPARATOR . DEFAULT_IMAGE;
         }
+        $ingredients = preg_replace('#\n+#',';',trim($ingredientsDirty));         
+        IF(SUBSTR($ingredients, -1) != ';'){$ingredients.= ';';}
         add_recipe($categoryId, $activeUser[0], $recipeName, $ingredients, $portions, $directions, $newImagePath);
         $success_message = "Sucess! Recipe created.";
         $recipeName = $ingredients = $portions = $directions = "";
@@ -216,7 +218,7 @@ switch ($action) {
         $isCancel = filter_input(INPUT_POST, 'cancel', FILTER_SANITIZE_STRING);
         $categoryId = filter_input(INPUT_POST, 'category_id', FILTER_VALIDATE_INT);
         $recipeName = filter_input(INPUT_POST, 'recipe_name', FILTER_SANITIZE_STRING);
-        $ingredients = filter_input(INPUT_POST, 'ingredients', FILTER_SANITIZE_STRING);
+        $ingredientsDirty = filter_input(INPUT_POST, 'ingredients', FILTER_SANITIZE_STRING);
         $portions = filter_input(INPUT_POST, 'portions', FILTER_VALIDATE_INT);
         $directions = filter_input(INPUT_POST, 'directions', FILTER_SANITIZE_STRING);
         $recipeId = filter_input(INPUT_POST, 'recipe_id', FILTER_VALIDATE_INT);
@@ -227,7 +229,7 @@ switch ($action) {
             break;
         }
 
-        $error_message = validateRecipeInputs($categoryId, $recipeName, $ingredients, $portions, $directions, $tmpFile);
+        $error_message = validateRecipeInputs($categoryId, $recipeName, $ingredientsDirty, $portions, $directions, $tmpFile);
         if ($recipeId == NULL || $recipeId == FALSE) {
             $error_message = "Invalid recipe id.";
         }
@@ -245,6 +247,8 @@ switch ($action) {
             }
             $newImagePath = $uploadResult['success'];
         }
+        $ingredients = preg_replace('#\n+#',';',trim($ingredientsDirty));         
+        IF(SUBSTR($ingredients, -1) != ';'){$ingredients.= ';';}
         update_recipe($recipeId, $categoryId, $recipeName, $ingredients, $portions, $directions, $newImagePath);
         $success_message = "Sucess! Recipe Updated.";
         include('view/new_recipe.php');
@@ -281,12 +285,13 @@ switch ($action) {
 
         $firstName = filter_input(INPUT_POST, 'first_name', FILTER_SANITIZE_STRING);
         $lastName = filter_input(INPUT_POST, 'last_name', FILTER_SANITIZE_STRING);
-        $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+        $email = filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL);
         $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_STRING);
         $password = filter_input(INPUT_POST, 'password', FILTER_SANITIZE_STRING);
+        $confirmPassword = filter_input(INPUT_POST, 'confirm_password', FILTER_SANITIZE_STRING);
         $userId = filter_input(INPUT_POST, 'user_id', FILTER_VALIDATE_INT);
 
-        $error_message = validateUserInputs($firstName, $lastName, $email, $username, $password, $userId);
+        $error_message = validateUserInputs($firstName, $lastName, $email, $username, $password, $confirmPassword, $userId);
         if (isset($error_message)) {
             include('view/signup.php');
         } else {
@@ -304,12 +309,13 @@ switch ($action) {
     case 'signup':
         $firstName = filter_input(INPUT_POST, 'first_name', FILTER_SANITIZE_STRING);
         $lastName = filter_input(INPUT_POST, 'last_name', FILTER_SANITIZE_STRING);
-        $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+        $email = filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL);
         $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_STRING);
         $password = filter_input(INPUT_POST, 'password', FILTER_SANITIZE_STRING);
+        $confirmPassword = filter_input(INPUT_POST, 'confirm_password', FILTER_SANITIZE_STRING);
         $userId = filter_input(INPUT_POST, 'user_id', FILTER_SANITIZE_STRING);
 
-        $error_message = validateUserInputs($firstName, $lastName, $email, $username, $password);
+        $error_message = validateUserInputs($firstName, $lastName, $email, $username, $password,$confirmPassword );
         if (isset($error_message)) {
             include('view/signup.php');
         } else {
@@ -349,8 +355,6 @@ function validateRecipeInputs($categoryId, $recipeName, $ingredients, $portions,
         return "Invalid portions.";
     } else if ($directions == NULL || $directions == FALSE || ctype_space($directions)) {
         return "Invalid directions.";
-    } else if (strpos($ingredients, ';') == FALSE) {
-        return "Separate each ingredient with a semicolon(;).<br>i.e. Milk; Eggs;";
     } else if (isset($tmpFile) && !empty($tmpFile['name'])) {
         $imageInfo = getimagesize($tmpFile['tmp_name']);
         if (!isset($imageInfo) || empty($imageInfo)) { //It's not an image;
@@ -367,7 +371,7 @@ function validateRecipeInputs($categoryId, $recipeName, $ingredients, $portions,
     return NULL;
 }
 
-function validateUserInputs($firstName, $lastName, $email, $username, $password, $userId = 0) {
+function validateUserInputs($firstName, $lastName, $email, $username, $password, $confirmPassword, $userId = 0) {
     global $activeUser;
     if ($firstName == NULL || $firstName == FALSE || ctype_space($firstName)) {
         return "Invalid first name.";
@@ -379,6 +383,10 @@ function validateUserInputs($firstName, $lastName, $email, $username, $password,
         return "Invalid username.";
     } else if ($userId == 0 && ($password == NULL || $password == FALSE || ctype_space($password))) {
         return "Invalid password.";
+    }else if ($userId == 0 && ($confirmPassword == NULL || $confirmPassword == FALSE || ctype_space($confirmPassword))) {
+        return "Invalid password.";
+    }else if ($userId == 0 && ($password != $confirmPassword)) {
+        return "Passwords do not match.";
     }
     //Password REGEX
     $uppercase_match = preg_match('/[A-Z]/', $password);
@@ -386,7 +394,9 @@ function validateUserInputs($firstName, $lastName, $email, $username, $password,
     $number_match = preg_match('/[0-9]/', $password);
     if ($userId == 0 && (!$uppercase_match || !$lowercase_match || !$number_match)) {
         return "Invalid password.";
-    } else if ($userId != 0 && ($password != NULL || $password != FALSE || ctype_space($password)) && (!$uppercase_match || !$lowercase_match || !$number_match)) {
+    }else if ($userId != 0 && ($password != $confirmPassword)) {
+        return "Passwords do not match.";
+    }  else if ($userId != 0 && ($password != NULL || $password != FALSE || ctype_space($password)) && (!$uppercase_match || !$lowercase_match || !$number_match)) {
         return "Invalid password.";
     } else if ($userId != 0 && (isset($activeUser[0]) && $activeUser[0] != $userId)) {
         return "Invalid user id.";
