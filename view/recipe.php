@@ -13,9 +13,11 @@
         <div id="recipe_ingredient_container" class="recipe_ingredient_container">
             <h2>Ingredients</h2>
             <ul>
-                <?php foreach ($ingredientList as $ingredientItem) : ?>
-                    <li><?php echo $ingredientItem ?></li>
-                <?php endforeach; ?>                
+                <?php foreach ($ingredientList as $ingredientItem) :
+                    if (!empty(trim($ingredientItem))) {
+                        ?>
+                        <li><?php echo $ingredientItem ?></li>
+    <?php } endforeach; ?>                
             </ul>
             <p><b>Portion: </b><?php echo $recipe['portion']; ?></p>
         </div>
@@ -25,7 +27,7 @@
             <ol class="exercises">
                 <?php foreach ($directionList as $directionItem) : ?>
                     <li><?php echo $directionItem; ?></li>
-                <?php endforeach; ?>  
+<?php endforeach; ?>  
             </ol>
         </div>
 

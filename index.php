@@ -173,7 +173,7 @@ switch ($action) {
         $isCancel = filter_input(INPUT_POST, 'cancel', FILTER_SANITIZE_STRING);
         $categoryId = filter_input(INPUT_POST, 'category_id', FILTER_VALIDATE_INT);
         $recipeName = filter_input(INPUT_POST, 'recipe_name', FILTER_SANITIZE_STRING);
-        $ingredientsDirty = filter_input(INPUT_POST, 'ingredients', FILTER_SANITIZE_STRING);
+        $ingredients = filter_input(INPUT_POST, 'ingredients', FILTER_SANITIZE_STRING);
         $portions = filter_input(INPUT_POST, 'portions', FILTER_VALIDATE_INT);
         $directions = filter_input(INPUT_POST, 'directions', FILTER_SANITIZE_STRING);
         $tmpFile = $_FILES['recipe_image'];
@@ -183,7 +183,7 @@ switch ($action) {
             break;
         }
         
-        $error_message = validateRecipeInputs($categoryId, $recipeName, $ingredientsDirty, $portions, $directions, $tmpFile);
+        $error_message = validateRecipeInputs($categoryId, $recipeName, $ingredients, $portions, $directions, $tmpFile);
         if (isset($error_message)) {
             include('view/new_recipe.php');
             break;
@@ -199,8 +199,8 @@ switch ($action) {
         } else { //WITHOUT IMAGE
             $newImagePath = IMG_URL . DIRECTORY_SEPARATOR . DEFAULT_IMAGE;
         }
-        $ingredients = preg_replace('#\n+#',';',trim($ingredientsDirty));         
-        IF(SUBSTR($ingredients, -1) != ';'){$ingredients.= ';';}
+        //$ingredients = preg_replace('#\n+#',';',trim($ingredientsDirty));         
+        IF(substr($ingredients, -1) != ';'){$ingredients.= ';';}
         add_recipe($categoryId, $activeUser[0], $recipeName, $ingredients, $portions, $directions, $newImagePath);
         $success_message = "Sucess! Recipe created.";
         $recipeName = $ingredients = $portions = $directions = "";
@@ -218,7 +218,7 @@ switch ($action) {
         $isCancel = filter_input(INPUT_POST, 'cancel', FILTER_SANITIZE_STRING);
         $categoryId = filter_input(INPUT_POST, 'category_id', FILTER_VALIDATE_INT);
         $recipeName = filter_input(INPUT_POST, 'recipe_name', FILTER_SANITIZE_STRING);
-        $ingredientsDirty = filter_input(INPUT_POST, 'ingredients', FILTER_SANITIZE_STRING);
+        $ingredients = filter_input(INPUT_POST, 'ingredients', FILTER_SANITIZE_STRING);
         $portions = filter_input(INPUT_POST, 'portions', FILTER_VALIDATE_INT);
         $directions = filter_input(INPUT_POST, 'directions', FILTER_SANITIZE_STRING);
         $recipeId = filter_input(INPUT_POST, 'recipe_id', FILTER_VALIDATE_INT);
@@ -229,7 +229,7 @@ switch ($action) {
             break;
         }
 
-        $error_message = validateRecipeInputs($categoryId, $recipeName, $ingredientsDirty, $portions, $directions, $tmpFile);
+        $error_message = validateRecipeInputs($categoryId, $recipeName, $ingredients, $portions, $directions, $tmpFile);
         if ($recipeId == NULL || $recipeId == FALSE) {
             $error_message = "Invalid recipe id.";
         }
@@ -247,8 +247,8 @@ switch ($action) {
             }
             $newImagePath = $uploadResult['success'];
         }
-        $ingredients = preg_replace('#\n+#',';',trim($ingredientsDirty));         
-        IF(SUBSTR($ingredients, -1) != ';'){$ingredients.= ';';}
+        //$ingredients = preg_replace('#\n+#',';',trim($ingredientsDirty));         
+        IF(substr($ingredients, -1) != ';'){$ingredients.= ';';}
         update_recipe($recipeId, $categoryId, $recipeName, $ingredients, $portions, $directions, $newImagePath);
         $success_message = "Sucess! Recipe Updated.";
         include('view/new_recipe.php');
@@ -355,6 +355,8 @@ function validateRecipeInputs($categoryId, $recipeName, $ingredients, $portions,
         return "Invalid portions.";
     } else if ($directions == NULL || $directions == FALSE || ctype_space($directions)) {
         return "Invalid directions.";
+    }else if (strpos($ingredients, ';') == FALSE) {
+        return "Separate each ingredient with a semicolon(;).<br>i.e. Milk; Eggs;";
     } else if (isset($tmpFile) && !empty($tmpFile['name'])) {
         $imageInfo = getimagesize($tmpFile['tmp_name']);
         if (!isset($imageInfo) || empty($imageInfo)) { //It's not an image;
