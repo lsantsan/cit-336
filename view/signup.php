@@ -62,6 +62,13 @@
                     }
                     ?>/>
                     <br>
+                     <label>Confirm Password:</label>
+                    <input type="password" name="confirm_password" <?php
+                    if (isset($confirmPassword)) {
+                        echo "value='$confirmPassword'";
+                    }
+                    ?>/>
+                    <br>
                     <label>&nbsp;</label>
                     <input type="submit" name="type" value="<?php
                     if (isset($isUpdateUser)) {
