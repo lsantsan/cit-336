@@ -321,7 +321,7 @@ switch ($action) {
         } else {
             $password_encrypted = encryptPassword($password);
             add_user($firstName, $lastName, $email, $username, $password_encrypted);
-            $firstName = $lastName = $email = $username = $password = "";
+            $firstName = $lastName = $email = $username = $password = $confirmPassword = "";
             $success_message = "Sucess! User created.";
             include('view/signup.php');
         }
